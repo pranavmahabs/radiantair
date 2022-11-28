@@ -12,18 +12,6 @@ def init_fn(worker):
     np.random.seed(seed)
     random.seed(seed)
 
-def add_mask(x, mask, dim=1):
-    #mask = mask.unsqueeze(dim)
-    mask = tf.expand_dims(mask, dim)
-    shape = list(x.shape); shape[dim] += 21
-    #new_x = x.new(*shape).zero_()
-    #new_x = new_x.scatter_(dim, mask, 1.0)
-    new_x = tf.zeros(x.shape)
-    new_x = 
-    s = [slice(None)]*len(shape)
-    s[dim] = slice(21, None)
-    new_x[s] = x
-    return new_x
 
 def sample(x, size):
     i = random.sample(range(x.shape[0]), size)
@@ -34,14 +22,13 @@ def pkload(fname):
         return pickle.load(f)
 
 def get_all_coords(stride):
-#     return torch.tensor(
-#         np.stack([v.reshape(-1) for v in
-#             np.meshgrid(
-#                     *[stride//2 + np.arange(0, s, stride) for s in _shape],
-#                     indexing='ij')],
-#             -1), dtype=torch.int16)
+     return tf.Tensor(
+         np.stack([v.reshape(-1) for v in
+             np.meshgrid(
+                     *[stride//2 + np.arange(0, s, stride) for s in _shape],
+                     indexing='ij')],
+             -1), dtype=tf.int16)
 
-# _zero = torch.tensor([0])
 
 def gen_feats():
     x, y, z = 240, 240, 155
