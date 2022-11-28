@@ -1,7 +1,6 @@
-import torch.nn.functional as F
-import torch
+#import torch.nn.functional as F
 import logging
-import torch.nn as nn
+import tensorflow as tf
 
 
 __all__ = ['sigmoid_dice_loss','softmax_dice_loss','GeneralizedDiceLoss','FocalLoss']
@@ -23,7 +22,8 @@ def FocalLoss(output, target, alpha=0.25, gamma=2.0):
     if target.dim() == 4:
         target = target.view(-1) # N*H*W*D
     # compute the negative likelyhood
-    logpt = -F.cross_entropy(output, target)
+    # TORCH: logpt = -F.cross_entropy(output, target)
+    logpt = cross_entropy(target, output)
     pt = tf.exp(logpt)
     # compute the loss
     loss = -((1 - pt) ** gamma) * logpt
@@ -79,7 +79,8 @@ def GeneralizedDiceLoss(output,target,eps=1e-5,weight_type='square'): # Generali
     elif weight_type == 'identity':
         class_weights = 1. / (target_sum + eps)
     elif weight_type == 'sqrt':
-        class_weights = 1. / (torch.sqrt(target_sum) + eps)
+        # TORCH: class_weights = 1. / (torch.sqrt(target_sum) + eps)
+        class_weights = 1. / (tf.sqrt(target_sum) + eps)
     else:
         raise ValueError('Check out the weight_type :',weight_type)
 
@@ -108,7 +109,8 @@ def expand_target(x, n_class,mode='softmax'):
     shape = list(x.size())
     shape.insert(1, n_class)
     shape = tuple(shape)
-    xx = torch.zeros(shape)
+    # TORCH: xx = torch.zeros(shape)
+    xx = tf.zeros(shape)
     if mode.lower() == 'softmax':
         xx[:,1,:,:,:] = (x == 1)
         xx[:,2,:,:,:] = (x == 2)
