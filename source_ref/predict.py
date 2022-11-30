@@ -75,16 +75,16 @@ def validate_softmax(
             elapsed_time = time.time() - start_time
             runtimes.append(elapsed_time)
 
-            output = F.softmax(logit,dim=1)
+            output = tf.nn.softmax(logit,dim=1)
         else:
-            logit = F.softmax(model(x) ,1) # 000
-            logit += F.softmax(model(x.flip(dims=(2,))).flip(dims=(2,)),1)
-            logit += F.softmax(model(x.flip(dims=(3,))).flip(dims=(3,) ),1)
-            logit += F.softmax(model(x.flip(dims=(4,))).flip(dims=(4,)),1)
-            logit += F.softmax(model(x.flip(dims=(2,3))).flip(dims=(2,3) ),1)
-            logit += F.softmax(model(x.flip(dims=(2,4))).flip(dims=(2,4)),1)
-            logit += F.softmax(model(x.flip(dims=(3,4))).flip(dims=(3,4)),1)
-            logit += F.softmax(model(x.flip(dims=(2,3,4))).flip(dims=(2,3,4)),1)
+            logit = tf.nn.softmax(model(x) ,1) # 000
+            logit += tf.nn.softmax(model(x.flip(dims=(2,))).flip(dims=(2,)),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(3,))).flip(dims=(3,) ),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(4,))).flip(dims=(4,)),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(2,3))).flip(dims=(2,3) ),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(2,4))).flip(dims=(2,4)),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(3,4))).flip(dims=(3,4)),1)
+            logit += tf.nn.softmax(model(x.flip(dims=(2,3,4))).flip(dims=(2,3,4)),1)
             output = logit / 8.0 # mean
 
         output = output[0, :, :H, :W, :T].cpu().numpy()
