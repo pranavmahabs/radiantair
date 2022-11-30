@@ -165,26 +165,32 @@ class MFNet(tf.keras.layers.Layer): #
             MFunit(channels*3, channels*2, g=groups, stride=1, norm=norm),
         )
 
-        self.upsample1 = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False) # H//8
+        #TODO: Might need to specify data_format if we have training errors. 
+        self.upsample1 = tf.keras.layers.Upsample3D(size=(2, 2, 2)) # Should automatically be trilinear H//8
         self.decoder_block1 = MFunit(channels*2+channels*2, channels*2, g=groups, stride=1, norm=norm)
 
-        self.upsample2 = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False) # H//4
+        self.upsample2 = tf.keras.layers.Upsample3D(size=(2, 2, 2)) # Should automatically be trilinear H//4
         self.decoder_block2 = MFunit(channels*2 + channels, channels, g=groups, stride=1, norm=norm)
 
-        self.upsample3 = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False) # H//2
+        self.upsample3 = tf.keras.layers.Upsample3D(size=(2, 2, 2)) # Should automatically be trilinear H//2
         self.decoder_block3 = MFunit(channels + n, n, g=groups, stride=1, norm=norm)
-        self.upsample4 = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False) # H
-        self.seg = nn.Conv3d(n, num_classes, kernel_size=1, padding=0,stride=1,bias=False)
+
+        self.upsample4 = tf.keras.layers.Upsample3D(size=(2, 2, 2)) # Should automatically be trilinear H
+        self.seg = tf.keras.layers.Conv3D(n, num_classes, kernel_size=1, padding=0,stride=1,bias=False)
 
         self.softmax = tf.nn.Softmax(dim=1)
 
         # Initialization
         for m in self.modules():
-            if isinstance(m, nn.Conv3d):
-                torch.nn.init.torch.nn.init.kaiming_normal_(m.weight) #
+            if isinstance(m, tf.keras.layers.Conv3D):
+                # torch.nn.init.torch.nn.init.kaiming_normal_(m.weight) #
+                tf.keras.initializers.HeNormal(m.weight)
             elif isinstance(m, nn.BatchNorm3d) or isinstance(m, nn.GroupNorm) or isinstance(m, SynchronizedBatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                # nn.init.constant_(m.weight, 1)
+                # TODO: Could potentially be wrong!
+                tf.ones_initializer(m.weight)
+                # nn.init.constant_(m.bias, 0)
+                tf.zeros_initializer(m.bias)
 
     def forward(self, x):
         # Encoder
@@ -194,15 +200,15 @@ class MFNet(tf.keras.layers.Layer): #
         x4 = self.encoder_block4(x3) # H//16
         # Decoder
         y1 = self.upsample1(x4)# H//8
-        y1 = torch.cat([x3,y1],dim=1)
+        y1 = tf.conact([x3,y1],dim=1)
         y1 = self.decoder_block1(y1)
 
         y2 = self.upsample2(y1)# H//4
-        y2 = torch.cat([x2,y2],dim=1)
+        y2 = tf.concat([x2,y2],dim=1)
         y2 = self.decoder_block2(y2)
 
         y3 = self.upsample3(y2)# H//2
-        y3 = torch.cat([x1,y3],dim=1)
+        y3 = tf.concat([x1,y3],dim=1)
         y3 = self.decoder_block3(y3)
         y4 = self.upsample4(y3)
         y4 = self.seg(y4)
@@ -216,13 +222,13 @@ class DMFNet(MFNet): # softmax
     def __init__(self, c=4,n=32,channels=128, groups=16,norm='bn', num_classes=4):
         super(DMFNet, self).__init__(c,n,channels,groups, norm, num_classes)
 
-        self.encoder_block2 = nn.Sequential(
+        self.encoder_block2 = tf.keras.Sequential(
             DMFUnit(n, channels, g=groups, stride=2, norm=norm,dilation=[1,2,3]),# H//4 down
             DMFUnit(channels, channels, g=groups, stride=1, norm=norm,dilation=[1,2,3]), # Dilated Conv 3
             DMFUnit(channels, channels, g=groups, stride=1, norm=norm,dilation=[1,2,3])
         )
 
-        self.encoder_block3 = nn.Sequential(
+        self.encoder_block3 = tf.keras.Sequential(
             DMFUnit(channels, channels*2, g=groups, stride=2, norm=norm,dilation=[1,2,3]), # H//8
             DMFUnit(channels * 2, channels * 2, g=groups, stride=1, norm=norm,dilation=[1,2,3]),# Dilated Conv 3
             DMFUnit(channels * 2, channels * 2, g=groups, stride=1, norm=norm,dilation=[1,2,3])
